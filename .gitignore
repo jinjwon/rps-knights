@@ -2,3 +2,8 @@
 builds/
 .DS_Store
 export_credentials.cfg
+.env
+.env.*
+!.env.example
+*.pem
+*.key
