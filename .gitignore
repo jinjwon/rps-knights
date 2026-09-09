@@ -13,6 +13,8 @@ unity/MemoryCaptures/
 unity/Recordings/
 unity/*.csproj
 unity/*.sln
+unity/*.slnx
+unity/.vscode/
 .DS_Store
 export_credentials.cfg
 .env

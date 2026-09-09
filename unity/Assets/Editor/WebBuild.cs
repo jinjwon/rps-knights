@@ -20,6 +20,9 @@ namespace RpsKnights.Editor
         {
             EnsureScene();
             Directory.CreateDirectory("Builds/Web");
+            PlayerSettings.productName = "RPS Knights";
+            PlayerSettings.companyName = "jinjwon";
+            PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Disabled;
             var options = new BuildPlayerOptions
             {
                 scenes = new[] { ScenePath },
@@ -37,10 +40,12 @@ namespace RpsKnights.Editor
 
         private static void EnsureScene()
         {
-            if (File.Exists(ScenePath)) return;
-            Directory.CreateDirectory("Assets/Scenes");
-            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-            EditorSceneManager.SaveScene(scene, ScenePath);
+            if (!File.Exists(ScenePath))
+            {
+                Directory.CreateDirectory("Assets/Scenes");
+                var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+                EditorSceneManager.SaveScene(scene, ScenePath);
+            }
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
             AssetDatabase.SaveAssets();
             Debug.Log("RPS Knights web prototype scene created.");
