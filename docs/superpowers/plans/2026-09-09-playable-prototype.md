@@ -33,11 +33,11 @@
 **Interfaces:**
 - Produces: `GameRules.rps_result(player_card, opponent_card) -> int`, `calculate_damage(base_damage, attack_modifier, defense, critical, guard_modifier) -> float`, `should_block_bullet(is_bullet, angle_degrees, active, consumed) -> bool`, `round_winner(player_health, bot_health) -> int`.
 
-- [ ] Write table-driven tests for all nine card matchups, damage, ties, and bullet blocking boundaries.
-- [ ] Run the headless test scene and verify failure because `GameRules` is missing.
-- [ ] Implement the minimal pure rules.
-- [ ] Run the headless test scene and verify all assertions pass.
-- [ ] Commit the tested rules.
+- [x] Write table-driven tests for all nine card matchups, damage, ties, and bullet blocking boundaries.
+- [x] Run the headless test scene and verify failure because `GameRules` is missing.
+- [x] Implement the minimal pure rules.
+- [x] Run the headless test scene and verify all assertions pass.
+- [x] Commit the tested rules.
 
 ### Task 2: Fighter, Projectile, and Arena Combat
 
@@ -52,11 +52,11 @@
 - Consumes: `GameRules.calculate_damage`, `GameRules.should_block_bullet`.
 - Produces: fighter signals `health_changed`, `defeated`, `combat_event`; methods `configure`, `reset_for_round`, `set_combat_enabled`, `apply_penalty`, `receive_attack`; projectile ownership and hit delivery.
 
-- [ ] Add failing tests for role stats, penalty modifiers, skill charge consumption, and bullet-block state.
-- [ ] Verify the new tests fail because fighter behavior is absent.
-- [ ] Implement player movement, bot movement, melee attacks, guard, dodge, role skill, gun shots, hit flash, and bullet block.
-- [ ] Verify pure tests and headless scene loading pass.
-- [ ] Commit the combat layer.
+- [x] Add failing tests for role stats, penalty modifiers, skill charge consumption, and bullet-block state.
+- [x] Verify the new tests fail because fighter behavior is absent.
+- [x] Implement player movement, bot movement, melee attacks, guard, dodge, role skill, gun shots, hit flash, and bullet block.
+- [x] Verify pure tests and headless scene loading pass.
+- [x] Commit the combat layer.
 
 ### Task 3: Match Flow and Player-facing UI
 
@@ -69,9 +69,9 @@
 - Consumes: fighter methods/signals and `GameRules.rps_result`.
 - Produces: selection, reveal, combat, result, and match-over phases; card buttons; gun toggle; HUD; restart and next-round actions.
 
-- [ ] Add failing phase-transition and round-scoring tests to `tests/test_game_rules.gd` using pure helper functions.
-- [ ] Verify they fail for missing helpers.
-- [ ] Implement the arena, third-person camera, card overlay, bot choice, penalty rotation, 20% gun roll, HUD, 45-second timer, three-win/seven-round end conditions, and restart.
-- [ ] Verify tests, editor import, interactive startup, and macOS export all succeed without errors.
-- [ ] Update README controls and prototype limitations.
-- [ ] Commit and push the prototype branch to the personal private repository.
+- [x] Add failing phase-transition and round-scoring tests to `tests/test_game_rules.gd` using pure helper functions.
+- [x] Verify they fail for missing helpers.
+- [x] Implement the arena, third-person camera, card overlay, bot choice, penalty rotation, 20% gun roll, HUD, 45-second timer, three-win/seven-round end conditions, and restart.
+- [x] Verify tests, editor import, interactive startup, and macOS export all succeed without errors.
+- [x] Update README controls and prototype limitations.
+- [x] Commit and push the prototype branch to the personal private repository.
