@@ -25,6 +25,11 @@ var timer_label: Label
 var player_hud: Label
 var bot_hud: Label
 var action_button: Button
+var hand_reveal: ColorRect
+var left_hand: Label
+var right_hand: Label
+var chant_label: Label
+var reveal_result: Label
 
 func _ready() -> void:
 	randomize()
@@ -79,7 +84,7 @@ func _build_ui() -> void:
 	box.add_theme_constant_override("separation", 14)
 	selection_panel.add_child(box)
 	var title := Label.new()
-	title.text = "전투 직업 카드를 선택하세요"
+	title.text = "무엇을 낼까요?"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 30)
 	box.add_child(title)
@@ -90,7 +95,7 @@ func _build_ui() -> void:
 	box.add_child(penalty)
 	for card in range(3):
 		var button := Button.new()
-		button.text = "%d  %s" % [card + 1, CARD_NAMES[card]]
+		button.text = "%d  %s" % [card + 1, ["✌  가위", "✊  바위", "✋  보"][card]]
 		button.custom_minimum_size.y = 62
 		button.add_theme_font_size_override("font_size", 21)
 		button.pressed.connect(_select_card.bind(card))
@@ -109,6 +114,27 @@ func _build_ui() -> void:
 	action_button.hide()
 	action_button.pressed.connect(_action_pressed)
 	root.add_child(action_button)
+	_build_hand_reveal(root)
+
+func _build_hand_reveal(root: Control) -> void:
+	hand_reveal = ColorRect.new()
+	hand_reveal.position = Vector2.ZERO
+	hand_reveal.size = Vector2(1280, 720)
+	hand_reveal.color = Color("101827")
+	hand_reveal.mouse_filter = Control.MOUSE_FILTER_STOP
+	hand_reveal.hide()
+	root.add_child(hand_reveal)
+	chant_label = _label(hand_reveal, Vector2(340, 75), Vector2(940, 145), 36)
+	chant_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	left_hand = _label(hand_reveal, Vector2(180, 180), Vector2(560, 430), 150)
+	left_hand.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	right_hand = _label(hand_reveal, Vector2(720, 180), Vector2(1100, 430), 150)
+	right_hand.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var versus := _label(hand_reveal, Vector2(570, 255), Vector2(710, 330), 36)
+	versus.text = "VS"
+	versus.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	reveal_result = _label(hand_reveal, Vector2(220, 465), Vector2(1060, 575), 25)
+	reveal_result.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
 func _label(parent: Control, from: Vector2, to: Vector2, font_size: int) -> Label:
 	var label := Label.new()
@@ -125,6 +151,7 @@ func _start_selection() -> void:
 	current_penalty = rounds_played % PENALTY_NAMES.size()
 	selection_panel.get_node("Choices/Penalty").text = "이번 패배 패널티: %s (4초)" % PENALTY_NAMES[current_penalty]
 	selection_panel.show()
+	hand_reveal.hide()
 	action_button.hide()
 	status_label.text = "상대의 선택은 공개 전까지 숨겨집니다"
 
@@ -141,12 +168,7 @@ func _select_card(card: int) -> void:
 	var bot_gun := bot_attempt and randf() < 0.20
 	if player_gun: player_role = GameRules.Role.GUN
 	if bot_gun: bot_role = GameRules.Role.GUN
-	_spawn_fighters(player_role, bot_role)
-	if player_attempt: player.skill_charges -= 1
-	if bot_attempt: bot.skill_charges -= 1
 	var result := GameRules.rps_result(player_card, bot_card)
-	if result == GameRules.Outcome.LOSS: player.apply_penalty(current_penalty)
-	if result == GameRules.Outcome.WIN: bot.apply_penalty(current_penalty)
 	phase = Phase.REVEAL
 	selection_panel.hide()
 	var outcome := "무승부 — 패널티 없음"
@@ -155,9 +177,39 @@ func _select_card(card: int) -> void:
 	var gun_result := ""
 	if player_attempt: gun_result += " · 내 총 %s" % ("성공" if player_gun else "실패")
 	if bot_attempt: gun_result += " · 상대 총 %s" % ("성공" if bot_gun else "실패")
+	await _play_hand_reveal(outcome, gun_result)
+	_spawn_fighters(player_role, bot_role)
+	if player_attempt: player.skill_charges -= 1
+	if bot_attempt: bot.skill_charges -= 1
+	if result == GameRules.Outcome.LOSS: player.apply_penalty(current_penalty)
+	if result == GameRules.Outcome.WIN: bot.apply_penalty(current_penalty)
 	status_label.text = "%s  VS  %s\n%s%s" % [CARD_NAMES[player_card], CARD_NAMES[bot_card], outcome, gun_result]
-	await get_tree().create_timer(2.0).timeout
+	await get_tree().create_timer(1.0).timeout
+	hand_reveal.hide()
 	if phase == Phase.REVEAL: _begin_combat()
+
+func _play_hand_reveal(outcome: String, gun_result: String) -> void:
+	hand_reveal.show()
+	left_hand.text = "✊"
+	right_hand.text = "✊"
+	reveal_result.text = ""
+	for chant in ["가위…", "바위…", "보!"]:
+		chant_label.text = chant
+		left_hand.position.y = 195.0
+		right_hand.position.y = 195.0
+		var tween := create_tween().set_parallel(true)
+		tween.tween_property(left_hand, "position:y", 145.0, 0.16).set_trans(Tween.TRANS_QUAD)
+		tween.tween_property(right_hand, "position:y", 145.0, 0.16).set_trans(Tween.TRANS_QUAD)
+		await tween.finished
+		var down := create_tween().set_parallel(true)
+		down.tween_property(left_hand, "position:y", 195.0, 0.16).set_trans(Tween.TRANS_QUAD)
+		down.tween_property(right_hand, "position:y", 195.0, 0.16).set_trans(Tween.TRANS_QUAD)
+		await down.finished
+	left_hand.text = ["✌", "✊", "✋"][player_card]
+	right_hand.text = ["✌", "✊", "✋"][bot_card]
+	chant_label.text = "결과 공개!"
+	reveal_result.text = "나: %s    상대: %s\n%s%s" % [CARD_NAMES[player_card], CARD_NAMES[bot_card], outcome, gun_result]
+	await get_tree().create_timer(0.75).timeout
 
 func _spawn_fighters(player_role: int, bot_role: int) -> void:
 	player = FIGHTER_SCENE.instantiate()

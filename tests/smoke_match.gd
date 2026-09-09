@@ -10,7 +10,12 @@ func _ready() -> void:
 		get_tree().quit(1)
 		return
 	match_controller._select_card(GameRules.Card.ROCK)
-	await get_tree().create_timer(2.2).timeout
+	await get_tree().create_timer(0.3).timeout
+	if match_controller.phase != match_controller.Phase.REVEAL or not match_controller.hand_reveal.visible:
+		push_error("Hand-shake reveal did not start after choosing a sign")
+		get_tree().quit(1)
+		return
+	await get_tree().create_timer(3.8).timeout
 	if match_controller.phase != match_controller.Phase.COMBAT:
 		push_error("Card selection did not advance to combat")
 		get_tree().quit(1)
