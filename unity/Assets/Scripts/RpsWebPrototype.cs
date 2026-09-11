@@ -14,6 +14,8 @@ namespace RpsKnights
         private GameObject selectionRoot;
         private RpsHandStage handStage;
         private Button playButton;
+        private DuelMode mode = DuelMode.Solo;
+        private Text modeLabel;
         private bool revealing;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -60,8 +62,8 @@ namespace RpsKnights
             title.fontStyle = FontStyle.Bold;
             Label("버튼을 누르면 두 손의 결과가 무작위로 정해집니다", overlay.transform, 20,
                 new Vector2(0.15f, 0.77f), new Vector2(0.85f, 0.84f));
-            Label("나", overlay.transform, 23, new Vector2(0.12f, 0.68f), new Vector2(0.42f, 0.75f));
-            Label("상대", overlay.transform, 23, new Vector2(0.58f, 0.68f), new Vector2(0.88f, 0.75f));
+            Label("1P", overlay.transform, 23, new Vector2(0.12f, 0.68f), new Vector2(0.42f, 0.75f));
+            Label("2P / AI", overlay.transform, 23, new Vector2(0.58f, 0.68f), new Vector2(0.88f, 0.75f));
             Label("VS", overlay.transform, 31, new Vector2(0.45f, 0.47f), new Vector2(0.55f, 0.57f));
             chant = Label("준비되면 시작하세요", overlay.transform, 34, new Vector2(0.25f, 0.7f), new Vector2(0.75f, 0.79f));
             result = Label("", overlay.transform, 23, new Vector2(0.15f, 0.2f), new Vector2(0.85f, 0.34f));
@@ -72,6 +74,12 @@ namespace RpsKnights
             playButton.onClick.AddListener(StartRandomRound);
             Text buttonLabel = Label("가위바위보!", buttonImage.transform, 29, Vector2.zero, Vector2.one);
             buttonLabel.fontStyle = FontStyle.Bold;
+
+            Image modeImage = Image("Mode", overlay.transform, new Color(0.12f, 0.18f, 0.3f, 0.95f), new Vector2(0.32f, 0.20f), new Vector2(0.68f, 0.27f));
+            Button modeButton = modeImage.gameObject.AddComponent<Button>();
+            modeButton.targetGraphic = modeImage;
+            modeButton.onClick.AddListener(ToggleMode);
+            modeLabel = Label("1인 모드 · AI 대전", modeImage.transform, 17, Vector2.zero, Vector2.one);
         }
 
         private void StartRandomRound()
@@ -111,7 +119,7 @@ namespace RpsKnights
             selectionRoot.SetActive(false);
             handStage.gameObject.SetActive(false);
             var duel = new GameObject("Duel Arena").AddComponent<DuelArena>();
-            duel.Begin(player, opponent, outcome, ReturnFromDuel);
+            duel.Begin(player, opponent, outcome, mode, ReturnFromDuel);
         }
 
         private void ReturnFromDuel()
@@ -122,7 +130,15 @@ namespace RpsKnights
             chant.text = "준비되면 시작하세요";
             result.text = "";
             playButton.interactable = true;
+            modeLabel.text = mode == DuelMode.Solo ? "1인 모드 · AI 대전" : "2인 모드 · 로컬 경쟁";
             revealing = false;
+        }
+
+        private void ToggleMode()
+        {
+            if (revealing) return;
+            mode = mode == DuelMode.Solo ? DuelMode.LocalVersus : DuelMode.Solo;
+            modeLabel.text = mode == DuelMode.Solo ? "1인 모드 · AI 대전" : "2인 모드 · 로컬 경쟁";
         }
 
         private Image Image(string name, Transform parent, Color color, Vector2 min, Vector2 max)

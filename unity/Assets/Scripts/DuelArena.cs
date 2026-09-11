@@ -23,10 +23,14 @@ namespace RpsKnights
         private Button attackButton;
         private Action onFinished;
         private bool finished;
+        private DuelMode mode;
+        private Camera playerCamera;
+        private Camera opponentCamera;
 
-        public void Begin(Sign playerSign, Sign opponentSign, RoundOutcome rpsOutcome, Action finishedCallback)
+        public void Begin(Sign playerSign, Sign opponentSign, RoundOutcome rpsOutcome, DuelMode duelMode, Action finishedCallback)
         {
             onFinished = finishedCallback;
+            mode = duelMode;
             if (rpsOutcome == RoundOutcome.Loss) playerPenaltyRemaining = 4f;
             if (rpsOutcome == RoundOutcome.Win) opponentPenaltyRemaining = 4f;
             BuildWorld(playerSign, opponentSign);
@@ -43,7 +47,10 @@ namespace RpsKnights
             playerPenaltyRemaining = Mathf.Max(0f, playerPenaltyRemaining - dt);
             opponentPenaltyRemaining = Mathf.Max(0f, opponentPenaltyRemaining - dt);
 
-            Vector3 input = new(Input.GetAxisRaw("Horizontal"), 0f, Input.GetAxisRaw("Vertical"));
+            Vector3 input = mode == DuelMode.Solo
+                ? new Vector3(Input.GetAxisRaw("Horizontal"), 0f, Input.GetAxisRaw("Vertical"))
+                : new Vector3((Input.GetKey(KeyCode.D) ? 1f : 0f) - (Input.GetKey(KeyCode.A) ? 1f : 0f), 0f,
+                    (Input.GetKey(KeyCode.W) ? 1f : 0f) - (Input.GetKey(KeyCode.S) ? 1f : 0f));
             float playerSpeed = playerPenaltyRemaining > 0f ? 2.6f : 3.6f;
             player.position += Vector3.ClampMagnitude(input, 1f) * (playerSpeed * dt);
             player.position = ClampToArena(player.position);
@@ -51,7 +58,7 @@ namespace RpsKnights
 
             Vector3 toPlayer = player.position - opponent.position;
             float distance = toPlayer.magnitude;
-            if (distance > 1.7f)
+            if (mode == DuelMode.Solo && distance > 1.7f)
             {
                 float botSpeed = opponentPenaltyRemaining > 0f ? 2.0f : 2.8f;
                 opponent.position += toPlayer.normalized * (botSpeed * dt);
@@ -59,8 +66,11 @@ namespace RpsKnights
             }
             opponent.LookAt(new Vector3(player.position.x, opponent.position.y, player.position.z));
 
-            if (Input.GetKeyDown(KeyCode.Space)) PlayerAttack();
-            if (distance <= 1.9f && opponentAttackCooldown <= 0f)
+            if ((mode == DuelMode.Solo && Input.GetKeyDown(KeyCode.Space)) ||
+                (mode == DuelMode.LocalVersus && Input.GetKeyDown(KeyCode.LeftShift))) PlayerAttack();
+            if (mode == DuelMode.LocalVersus)
+                UpdateLocalOpponent();
+            if (mode == DuelMode.Solo && distance <= 1.9f && opponentAttackCooldown <= 0f)
             {
                 playerHealth = Mathf.Max(0f, playerHealth - 11f);
                 opponentAttackCooldown = 0.9f;
@@ -69,6 +79,20 @@ namespace RpsKnights
 
             RefreshHud();
             if (playerHealth <= 0f || opponentHealth <= 0f || remaining <= 0f) FinishRound();
+        }
+
+        private void UpdateLocalOpponent()
+        {
+            Vector3 input = new Vector3((Input.GetKey(KeyCode.RightArrow) ? 1f : 0f) - (Input.GetKey(KeyCode.LeftArrow) ? 1f : 0f), 0f,
+                (Input.GetKey(KeyCode.UpArrow) ? 1f : 0f) - (Input.GetKey(KeyCode.DownArrow) ? 1f : 0f));
+            opponent.position = ClampToArena(opponent.position + Vector3.ClampMagnitude(input, 1f) * (3.6f * Time.deltaTime));
+            if (Input.GetKeyDown(KeyCode.RightControl) && opponentAttackCooldown <= 0f)
+            {
+                opponentAttackCooldown = 0.65f;
+                if (Vector3.Distance(player.position, opponent.position) <= 2.3f)
+                    playerHealth = Mathf.Max(0f, playerHealth - 14f);
+                Pulse(opponent);
+            }
         }
 
         private void PlayerAttack()
@@ -98,12 +122,13 @@ namespace RpsKnights
 
         private void BuildWorld(Sign playerSign, Sign opponentSign)
         {
-            Camera camera = new GameObject("Duel Camera", typeof(Camera)).GetComponent<Camera>();
-            camera.transform.SetParent(transform);
-            camera.transform.position = new Vector3(0f, 8.5f, -9.5f);
-            camera.transform.rotation = Quaternion.Euler(32f, 0f, 0f);
-            camera.clearFlags = CameraClearFlags.SolidColor;
-            camera.backgroundColor = new Color(0.035f, 0.055f, 0.10f);
+            playerCamera = CreateCombatCamera("P1 First Person", new Rect(0f, 0f, mode == DuelMode.Solo ? 1f : 0.5f, 1f));
+            if (mode == DuelMode.Solo)
+            {
+                playerCamera.transform.SetParent(player);
+                playerCamera.transform.localPosition = new Vector3(0f, 1.2f, -0.25f);
+                playerCamera.transform.localRotation = Quaternion.Euler(8f, 0f, 0f);
+            }
 
             var light = new GameObject("Arena Light", typeof(Light)).GetComponent<Light>();
             light.transform.SetParent(transform);
@@ -116,6 +141,25 @@ namespace RpsKnights
             floor.SetParent(transform);
             player = Knight("Player Knight", new Vector3(0f, 0.8f, -3f), playerSign, new Color(0.25f, 0.65f, 1f));
             opponent = Knight("Opponent Knight", new Vector3(0f, 0.8f, 3f), opponentSign, new Color(1f, 0.35f, 0.28f));
+            if (mode == DuelMode.LocalVersus)
+            {
+                opponentCamera = CreateCombatCamera("P2 First Person", new Rect(0.5f, 0f, 0.5f, 1f));
+                opponentCamera.transform.SetParent(opponent);
+                opponentCamera.transform.localPosition = new Vector3(0f, 1.2f, 0.25f);
+                opponentCamera.transform.localRotation = Quaternion.Euler(8f, 180f, 0f);
+                playerCamera.rect = new Rect(0f, 0f, 0.5f, 1f);
+            }
+        }
+
+        private Camera CreateCombatCamera(string objectName, Rect viewport)
+        {
+            Camera camera = new GameObject(objectName, typeof(Camera)).GetComponent<Camera>();
+            camera.transform.SetParent(transform);
+            camera.rect = viewport;
+            camera.fieldOfView = 70f;
+            camera.clearFlags = CameraClearFlags.SolidColor;
+            camera.backgroundColor = new Color(0.035f, 0.055f, 0.10f);
+            return camera;
         }
 
         private Transform Knight(string objectName, Vector3 position, Sign sign, Color color)
@@ -178,7 +222,7 @@ namespace RpsKnights
             Text attackText = Label(attackImage.transform, font, Vector2.zero, Vector2.one, TextAnchor.MiddleCenter, 25);
             attackText.text = "공격  SPACE";
             Label(canvas.transform, font, new Vector2(0.04f, 0.04f), new Vector2(0.42f, 0.13f), TextAnchor.MiddleLeft, 19).text =
-                "이동 W·A·S·D   가까이 가서 공격";
+                mode == DuelMode.Solo ? "1인칭 이동 W·A·S·D · 공격 SPACE" : "P1 이동 W·A·S·D / SHIFT · P2 이동 방향키 / CTRL";
             RefreshHud();
         }
 

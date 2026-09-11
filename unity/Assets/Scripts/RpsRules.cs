@@ -2,6 +2,7 @@ namespace RpsKnights
 {
     public enum Sign { Scissors, Rock, Paper }
     public enum RoundOutcome { Draw, Win, Loss }
+    public enum DuelMode { Solo, LocalVersus }
 
     public static class RpsRules
     {
