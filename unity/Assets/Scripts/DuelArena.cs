@@ -52,7 +52,7 @@ namespace RpsKnights
                 : new Vector3((Input.GetKey(KeyCode.D) ? 1f : 0f) - (Input.GetKey(KeyCode.A) ? 1f : 0f), 0f,
                     (Input.GetKey(KeyCode.W) ? 1f : 0f) - (Input.GetKey(KeyCode.S) ? 1f : 0f));
             float playerSpeed = playerPenaltyRemaining > 0f ? 2.6f : 3.6f;
-            player.position += Vector3.ClampMagnitude(input, 1f) * (playerSpeed * dt);
+            player.position += player.TransformDirection(Vector3.ClampMagnitude(input, 1f)) * (playerSpeed * dt);
             player.position = ClampToArena(player.position);
             player.LookAt(new Vector3(opponent.position.x, player.position.y, opponent.position.z));
 
@@ -85,7 +85,8 @@ namespace RpsKnights
         {
             Vector3 input = new Vector3((Input.GetKey(KeyCode.RightArrow) ? 1f : 0f) - (Input.GetKey(KeyCode.LeftArrow) ? 1f : 0f), 0f,
                 (Input.GetKey(KeyCode.UpArrow) ? 1f : 0f) - (Input.GetKey(KeyCode.DownArrow) ? 1f : 0f));
-            opponent.position = ClampToArena(opponent.position + Vector3.ClampMagnitude(input, 1f) * (3.6f * Time.deltaTime));
+            float speed = opponentPenaltyRemaining > 0f ? 2.6f : 3.6f;
+            opponent.position = ClampToArena(opponent.position + opponent.TransformDirection(Vector3.ClampMagnitude(input, 1f)) * (speed * Time.deltaTime));
             if (Input.GetKeyDown(KeyCode.RightControl) && opponentAttackCooldown <= 0f)
             {
                 opponentAttackCooldown = 0.65f;
@@ -123,12 +124,6 @@ namespace RpsKnights
         private void BuildWorld(Sign playerSign, Sign opponentSign)
         {
             playerCamera = CreateCombatCamera("P1 First Person", new Rect(0f, 0f, mode == DuelMode.Solo ? 1f : 0.5f, 1f));
-            if (mode == DuelMode.Solo)
-            {
-                playerCamera.transform.SetParent(player);
-                playerCamera.transform.localPosition = new Vector3(0f, 1.2f, -0.25f);
-                playerCamera.transform.localRotation = Quaternion.Euler(8f, 0f, 0f);
-            }
 
             var light = new GameObject("Arena Light", typeof(Light)).GetComponent<Light>();
             light.transform.SetParent(transform);
@@ -141,12 +136,17 @@ namespace RpsKnights
             floor.SetParent(transform);
             player = Knight("Player Knight", new Vector3(0f, 0.8f, -3f), playerSign, new Color(0.25f, 0.65f, 1f));
             opponent = Knight("Opponent Knight", new Vector3(0f, 0.8f, 3f), opponentSign, new Color(1f, 0.35f, 0.28f));
+            player.LookAt(opponent.position);
+            opponent.LookAt(player.position);
+            playerCamera.transform.SetParent(player, false);
+            playerCamera.transform.localPosition = new Vector3(0f, 0.85f, 0.55f);
+            playerCamera.transform.localRotation = Quaternion.Euler(8f, 0f, 0f);
             if (mode == DuelMode.LocalVersus)
             {
                 opponentCamera = CreateCombatCamera("P2 First Person", new Rect(0.5f, 0f, 0.5f, 1f));
                 opponentCamera.transform.SetParent(opponent);
-                opponentCamera.transform.localPosition = new Vector3(0f, 1.2f, 0.25f);
-                opponentCamera.transform.localRotation = Quaternion.Euler(8f, 180f, 0f);
+                opponentCamera.transform.localPosition = new Vector3(0f, 0.85f, 0.55f);
+                opponentCamera.transform.localRotation = Quaternion.Euler(8f, 0f, 0f);
                 playerCamera.rect = new Rect(0f, 0f, 0.5f, 1f);
             }
         }

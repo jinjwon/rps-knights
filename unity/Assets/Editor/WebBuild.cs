@@ -30,7 +30,9 @@ namespace RpsKnights.Editor
                 target = BuildTarget.WebGL,
                 options = BuildOptions.None
             };
-            BuildPipeline.BuildPlayer(options);
+            var report = BuildPipeline.BuildPlayer(options);
+            if (report.summary.result != UnityEditor.Build.Reporting.BuildResult.Succeeded)
+                throw new System.InvalidOperationException("WebGL build failed: " + report.summary.result);
         }
 
         public static void BuildWebFromCommandLine()
