@@ -26,6 +26,8 @@ namespace RpsKnights
         private DuelMode mode;
         private Camera playerCamera;
         private Camera opponentCamera;
+        private int skillsRemaining = 3;
+        private float skillCooldown;
 
         public void Begin(Sign playerSign, Sign opponentSign, RoundOutcome rpsOutcome, DuelMode duelMode, Action finishedCallback)
         {
@@ -41,6 +43,7 @@ namespace RpsKnights
         {
             if (finished) return;
             float dt = Time.deltaTime;
+            skillCooldown = Mathf.Max(0f, skillCooldown - dt);
             remaining = Mathf.Max(0f, remaining - dt);
             playerAttackCooldown = Mathf.Max(0f, playerAttackCooldown - dt);
             opponentAttackCooldown = Mathf.Max(0f, opponentAttackCooldown - dt);
@@ -54,7 +57,7 @@ namespace RpsKnights
             float playerSpeed = playerPenaltyRemaining > 0f ? 2.6f : 3.6f;
             player.position += player.TransformDirection(Vector3.ClampMagnitude(input, 1f)) * (playerSpeed * dt);
             player.position = ClampToArena(player.position);
-            player.LookAt(new Vector3(opponent.position.x, player.position.y, opponent.position.z));
+            FaceOpponent(player, opponent, dt);
 
             Vector3 toPlayer = player.position - opponent.position;
             float distance = toPlayer.magnitude;
@@ -64,10 +67,10 @@ namespace RpsKnights
                 opponent.position += toPlayer.normalized * (botSpeed * dt);
                 opponent.position = ClampToArena(opponent.position);
             }
-            opponent.LookAt(new Vector3(player.position.x, opponent.position.y, player.position.z));
+            FaceOpponent(opponent, player, dt);
 
-            if ((mode == DuelMode.Solo && Input.GetKeyDown(KeyCode.Space)) ||
-                (mode == DuelMode.LocalVersus && Input.GetKeyDown(KeyCode.LeftShift))) PlayerAttack();
+            if (Input.GetKeyDown(KeyCode.E)) PlayerAttack();
+            if (Input.GetKeyDown(KeyCode.Q)) PlayerSkill();
             if (mode == DuelMode.LocalVersus)
                 UpdateLocalOpponent();
             if (mode == DuelMode.Solo && distance <= 1.9f && opponentAttackCooldown <= 0f)
@@ -103,6 +106,26 @@ namespace RpsKnights
             Pulse(player);
             if (Vector3.Distance(player.position, opponent.position) <= 2.3f)
                 opponentHealth = Mathf.Max(0f, opponentHealth - 14f);
+        }
+
+        private void PlayerSkill()
+        {
+            if (finished || skillsRemaining <= 0 || skillCooldown > 0f) return;
+            skillsRemaining--;
+            skillCooldown = 3f;
+            Pulse(player);
+            if (Vector3.Distance(player.position, opponent.position) <= 2.8f)
+                opponentHealth = Mathf.Max(0f, opponentHealth - 28f);
+        }
+
+        private static void FaceOpponent(Transform actor, Transform target, float dt)
+        {
+            Vector3 direction = target.position - actor.position;
+            direction.y = 0f;
+            // Keep heading when overlapping instead of flipping the camera 180 degrees.
+            if (direction.sqrMagnitude < 1f) return;
+            actor.rotation = Quaternion.RotateTowards(actor.rotation,
+                Quaternion.LookRotation(direction), 90f * dt);
         }
 
         private void FinishRound()
@@ -220,9 +243,9 @@ namespace RpsKnights
             attackButton = attackImage.GetComponent<Button>();
             attackButton.onClick.AddListener(PlayerAttack);
             Text attackText = Label(attackImage.transform, font, Vector2.zero, Vector2.one, TextAnchor.MiddleCenter, 25);
-            attackText.text = "공격  SPACE";
+            attackText.text = "공격  E";
             Label(canvas.transform, font, new Vector2(0.04f, 0.04f), new Vector2(0.42f, 0.13f), TextAnchor.MiddleLeft, 19).text =
-                mode == DuelMode.Solo ? "1인칭 이동 W·A·S·D · 공격 SPACE" : "P1 이동 W·A·S·D / SHIFT · P2 이동 방향키 / CTRL";
+                mode == DuelMode.Solo ? "이동 WASD · 공격 E · 강타 Q (3회)" : "P1 WASD / 공격 E / 강타 Q · P2 방향키 / 공격 Right Ctrl";
             RefreshHud();
         }
 
@@ -249,7 +272,7 @@ namespace RpsKnights
         {
             string penalty = playerPenaltyRemaining > 0f ? $"  이속 감소 {playerPenaltyRemaining:0.0}초" : "";
             string botPenalty = opponentPenaltyRemaining > 0f ? $"  이속 감소 {opponentPenaltyRemaining:0.0}초" : "";
-            playerHud.text = $"나  HP {playerHealth:0}/{MaxHealth}{penalty}";
+            playerHud.text = $"나  HP {playerHealth:0}/{MaxHealth}{penalty}\nQ 강타 {skillsRemaining}/3 · 대기 {skillCooldown:0.0}초";
             opponentHud.text = $"상대  HP {opponentHealth:0}/{MaxHealth}{botPenalty}";
             if (!finished) status.text = $"남은 시간 {remaining:0.0}초";
         }
@@ -263,14 +286,15 @@ namespace RpsKnights
 
         private void Pulse(Transform target)
         {
-            target.localScale = Vector3.one * 1.18f;
-            LeanBack(target);
+            Transform weapon = target.Find("Weapon");
+            if (weapon != null) AnimateWeapon(weapon);
         }
 
-        private async void LeanBack(Transform target)
+        private async void AnimateWeapon(Transform weapon)
         {
+            weapon.localRotation = Quaternion.Euler(-35f, 0f, 0f);
             await Awaitable.WaitForSecondsAsync(0.12f);
-            if (target != null) target.localScale = Vector3.one;
+            if (weapon != null) weapon.localRotation = Quaternion.identity;
         }
     }
 }
