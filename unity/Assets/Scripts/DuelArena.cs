@@ -20,6 +20,7 @@ namespace RpsKnights
         private Text status;
         private Text playerHud;
         private Text opponentHud;
+        private Text hitMarker;
         private Button attackButton;
         private Action onFinished;
         private bool finished;
@@ -105,7 +106,10 @@ namespace RpsKnights
             playerAttackCooldown = 0.65f;
             Pulse(player);
             if (Vector3.Distance(player.position, opponent.position) <= 2.3f)
+            {
                 opponentHealth = Mathf.Max(0f, opponentHealth - 14f);
+                ShowHitMarker("HIT", new Color(1f, 0.82f, 0.25f));
+            }
         }
 
         private void PlayerSkill()
@@ -115,7 +119,10 @@ namespace RpsKnights
             skillCooldown = 3f;
             Pulse(player);
             if (Vector3.Distance(player.position, opponent.position) <= 2.8f)
+            {
                 opponentHealth = Mathf.Max(0f, opponentHealth - 28f);
+                ShowHitMarker("SKILL!", new Color(0.3f, 0.85f, 1f));
+            }
         }
 
         private static void FaceOpponent(Transform actor, Transform target, float dt)
@@ -227,11 +234,15 @@ namespace RpsKnights
             var scaler = canvasObject.GetComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1280, 720);
+            scaler.matchWidthOrHeight = 0.5f;
 
             playerHud = Label(canvas.transform, font, new Vector2(0.04f, 0.86f), new Vector2(0.35f, 0.97f), TextAnchor.MiddleLeft, 25);
             opponentHud = Label(canvas.transform, font, new Vector2(0.65f, 0.86f), new Vector2(0.96f, 0.97f), TextAnchor.MiddleRight, 25);
             status = Label(canvas.transform, font, new Vector2(0.32f, 0.84f), new Vector2(0.68f, 0.98f), TextAnchor.MiddleCenter, 28);
             status.text = "결투 시작!";
+            hitMarker = Label(canvas.transform, font, new Vector2(0.44f, 0.42f), new Vector2(0.56f, 0.58f), TextAnchor.MiddleCenter, 30);
+            hitMarker.text = "+";
+            hitMarker.color = new Color(1f, 1f, 1f, 0.7f);
 
             var attackImage = new GameObject("Attack", typeof(RectTransform), typeof(Image), typeof(Button));
             attackImage.transform.SetParent(canvas.transform, false);
@@ -288,6 +299,19 @@ namespace RpsKnights
         {
             Transform weapon = target.Find("Weapon");
             if (weapon != null) AnimateWeapon(weapon);
+        }
+
+        private async void ShowHitMarker(string message, Color color)
+        {
+            if (hitMarker == null) return;
+            hitMarker.text = message;
+            hitMarker.color = color;
+            hitMarker.fontSize = 34;
+            await Awaitable.WaitForSecondsAsync(0.16f);
+            if (hitMarker == null) return;
+            hitMarker.text = "+";
+            hitMarker.color = new Color(1f, 1f, 1f, 0.7f);
+            hitMarker.fontSize = 30;
         }
 
         private async void AnimateWeapon(Transform weapon)
