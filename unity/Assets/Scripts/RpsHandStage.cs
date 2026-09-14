@@ -57,7 +57,7 @@ namespace RpsKnights
             CreateDisc("Opponent Glow", new Vector3(2.35f, -1.5f, 1.7f), new Vector3(3.6f, 0.12f, 3.6f),
                 new Color(0.48f, 0.08f, 0.07f));
 
-            GameObject divider = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            GameObject divider = CreateMeshObject("Cube.fbx");
             divider.name = "Center Light";
             divider.transform.SetParent(transform, false);
             divider.transform.localPosition = new Vector3(0f, -0.35f, 2.2f);
@@ -67,7 +67,7 @@ namespace RpsKnights
 
         private void CreateDisc(string name, Vector3 position, Vector3 scale, Color color)
         {
-            GameObject disc = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            GameObject disc = CreateMeshObject("Cylinder.fbx");
             disc.name = name;
             disc.transform.SetParent(transform, false);
             disc.transform.localPosition = position;
@@ -79,8 +79,13 @@ namespace RpsKnights
         {
             Shader shader = Resources.Load<Shader>("RPSUnlit");
             target.GetComponent<Renderer>().material = new Material(shader) { color = color };
-            Collider collider = target.GetComponent<Collider>();
-            if (collider != null) UnityEngine.Object.Destroy(collider);
+        }
+
+        private static GameObject CreateMeshObject(string meshName)
+        {
+            var item = new GameObject("Mesh", typeof(MeshFilter), typeof(MeshRenderer));
+            item.GetComponent<MeshFilter>().sharedMesh = Resources.GetBuiltinResource<Mesh>(meshName);
+            return item;
         }
 
         private sealed class HandModel
