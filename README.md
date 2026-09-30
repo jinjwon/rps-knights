@@ -1,4 +1,28 @@
-# RPS Knights 개발 환경
+# RPS Knights
+
+가위바위보의 짧은 심리전과 3D 기사 결투를 연결하는 게임 프로토타입입니다. 손을 공개한 뒤 승패에 따른 조건을 가지고 전투에 들어가며, 로컬 봇을 상대로 전투 흐름을 실험합니다.
+
+## 플레이 가능한 버전
+
+| 브랜치 | 구현 내용 | 실행 방법 |
+|---|---|---|
+| [prototype/unity-web](https://github.com/jinjwon/rps-knights/tree/prototype/unity-web) | Unity 6 · 무작위 가위바위보 · 3D 손 흔들기와 동시 공개 · 제한 시간 45초의 기본 결투 | [Unity 프로젝트 안내](https://github.com/jinjwon/rps-knights/blob/prototype/unity-web/unity/README.md) |
+| [prototype/playable-loop](https://github.com/jinjwon/rps-knights/tree/prototype/playable-loop) | Godot · 손 선택 · 직업별 전투와 스킬 · 3승 경기 | 해당 브랜치의 project.godot를 Godot에서 열고 F5 |
+| main | 초기 개발 환경과 기획 문서 | 전체 플레이는 위 프로토타입 브랜치 사용 |
+
+Unity 버전은 가위바위보 패자에게 4초의 이동속도 감소를 적용합니다. Godot 버전의 특수 스킬·총 변형·총알 막기는 Unity 버전에 아직 옮기지 않았습니다. 두 버전 모두 임시 기사 모델을 사용하는 개발 단계이며 온라인 대전은 구현하지 않았습니다.
+
+## 개발 방향
+
+한 번의 가위바위보 결과가 결투에서 어떤 선택을 만드는지 검증하는 것이 목적입니다. 현재 구현과 향후 기획을 구분하며, 기획 문서의 시험 수치는 확정 규칙이 아닙니다.
+
+## 에셋과 권리
+
+Unity의 가위·바위·보 손 모델은 Kat Deak / FUZE Technologies의 3D Hands pack을 사용합니다. [출처와 사용 조건](https://github.com/jinjwon/rps-knights/blob/prototype/unity-web/unity/Assets/Resources/Hands/LICENSE.md)을 함께 보관합니다. 엔진과 외부 에셋의 권리는 각 권리자에게 있으며, 저장소 공개만으로 모든 파일에 자유로운 재배포 라이선스가 부여되지는 않습니다.
+
+---
+
+## 개발 환경 기록
 
 구축일: 2026-09-08
 
@@ -41,7 +65,7 @@ Godot는 공식 앱 서명 및 macOS 공증 검증을 통과했다. Blender 설�
 
 ## GitHub 관리 방식
 
-기능 작업은 별도 브랜치에서 진행하고 검증 후 main에 반영한다. 코드·설정·기획 문서를 함께 기록한다. 빌드 출력·캐시·환경 변수 파일·인증 키는 업로드하지 않는다. 원격 저장소 연결과 최초 업로드가 완료되어야 GitHub 백업이 생성된다.
+기능 작업은 별도 브랜치에서 진행하고 검증 후 main에 반영한다. 코드·설정·기획 문서를 함께 기록한다. 빌드 출력·캐시·환경 변수 파일·인증 키는 업로드하지 않는다. 원격 저장소에 코드와 문서를 보관하며, 플레이 가능한 구현은 위 브랜치별 안내를 따른다.
 
 ## 공식 자료
 
